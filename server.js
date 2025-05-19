@@ -13,15 +13,13 @@ const io = socketIo(server, {
 
 app.use(cors());
 
-let messages = []; // Xabarlarni xotirada saqlaymiz
+let messages = [];
 
 io.on("connection", (socket) => {
   console.log("Foydalanuvchi ulandi");
 
-  // Kirgan odamga eski xabarlar jo‘natiladi
   socket.emit("chat history", messages);
 
-  // Yangi xabar kelganda
   socket.on("chat message", (data) => {
     const msgData = {
       name: data.name,
