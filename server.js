@@ -7,7 +7,12 @@ const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: {
+    origin: "*", // Render uchun barcha frontendga ruxsat
+    methods: ["GET", "POST"]
+  }
+});
 
 const FILE_PATH = path.join(__dirname, "messages.json");
 
@@ -17,7 +22,7 @@ if (fs.existsSync(FILE_PATH)) {
     const data = fs.readFileSync(FILE_PATH, "utf8");
     messages = JSON.parse(data);
   } catch (err) {
-    console.error("Xabarlarni o‘qishda xatolik:", err);
+    console.error("Xatolik:", err);
   }
 }
 
@@ -26,11 +31,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 io.on("connection", (socket) => {
   console.log("Yangi foydalanuvchi ulandi");
-
-  // Eski xabarlarni yuborish
   socket.emit("chat history", messages);
 
-  // Yangi xabar
   socket.on("chat message", (data) => {
     const msgData = {
       name: data.name,
@@ -39,9 +41,8 @@ io.on("connection", (socket) => {
     };
 
     messages.push(msgData);
-
     fs.writeFile(FILE_PATH, JSON.stringify(messages, null, 2), (err) => {
-      if (err) console.error("Faylga yozishda xatolik:", err);
+      if (err) console.error("Xatolik:", err);
     });
 
     io.emit("chat message", msgData);
