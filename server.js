@@ -1,30 +1,39 @@
 const express = require("express");
 const http = require("http");
+const socketIo = require("socket.io");
 const cors = require("cors");
+
 const app = express();
 const server = http.createServer(app);
-const { Server } = require("socket.io");
-const io = new Server(server, {
+const io = socketIo(server, {
   cors: {
-    origin: "*", // barcha frontendga ruxsat beramiz
-    methods: ["GET", "POST"]
+    origin: "*"
   }
 });
 
 app.use(cors());
 
+let messages = []; // Xabarlarni xotirada saqlaymiz
+
 io.on("connection", (socket) => {
-  console.log("Foydalanuvchi ulandi:", socket.id);
+  console.log("Foydalanuvchi ulandi");
 
-  socket.on("chat message", (msg) => {
-    io.emit("chat message", msg); // barcha foydalanuvchilarga yuborish
-  });
+  // Kirgan odamga eski xabarlar jo‘natiladi
+  socket.emit("chat history", messages);
 
-  socket.on("disconnect", () => {
-    console.log("Foydalanuvchi chiqdi:", socket.id);
+  // Yangi xabar kelganda
+  socket.on("chat message", (data) => {
+    const msgData = {
+      name: data.name,
+      message: data.message,
+      time: new Date().toLocaleTimeString()
+    };
+    messages.push(msgData);
+    io.emit("chat message", msgData);
   });
 });
 
-server.listen(3000, () => {
-  console.log("Socket.io server 3000-portda ishga tushdi");
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server ishga tushdi: ${PORT}`);
 });
